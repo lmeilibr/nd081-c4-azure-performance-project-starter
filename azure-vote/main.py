@@ -21,6 +21,7 @@ from opencensus.ext.azure.trace_exporter import AzureExporter
 from opencensus.trace.samplers import ProbabilitySampler
 from opencensus.trace.tracer import Tracer
 from opencensus.ext.flask.flask_middleware import FlaskMiddleware
+INSTRUMENTAL_KEY="82e43e0f-0431-4736-8df0-7043ae60c350"
 # For metrics
 stats = stats_module.stats
 view_manager = stats.view_manager
@@ -30,11 +31,11 @@ config_integration.trace_integrations(['logging'])
 config_integration.trace_integrations(['requests'])
 # Standard Logging
 logger = logging.getLogger(__name__)
-handler = AzureLogHandler(connection_string='InstrumentationKey=[your-guid]')
+handler = AzureLogHandler(connection_string=f'InstrumentationKey={INSTRUMENTAL_KEY}')
 handler.setFormatter(logging.Formatter('%(traceId)s %(spanId)s %(message)s'))
 logger.addHandler(handler)
 # Logging custom Events
-logger.addHandler(AzureEventHandler(connection_string='InstrumentationKey=[your-guid]'))
+logger.addHandler(AzureEventHandler(connection_string=f'InstrumentationKey={INSTRUMENTAL_KEY}'))
 # Set the logging level
 logger.setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
@@ -42,13 +43,13 @@ logger = logging.getLogger(__name__)
 # Metrics
 exporter = metrics_exporter.new_metrics_exporter(
   enable_standard_metrics=True,
-  connection_string='InstrumentationKey=a6cfdc31-bc29-493e-9b89-7618597842b9')
+  connection_string=f'InstrumentationKey={INSTRUMENTAL_KEY}')
 view_manager.register_exporter(exporter)
 
 # Tracing
 tracer = Tracer(
     exporter=AzureExporter(
-        connection_string='InstrumentationKey=a6cfdc31-bc29-493e-9b89-7618597842b9'),
+        connection_string=f'InstrumentationKey={INSTRUMENTAL_KEY}'),
     sampler=ProbabilitySampler(1.0),
 )
 
@@ -57,7 +58,7 @@ app = Flask(__name__)
 # Requests
 middleware = FlaskMiddleware(
     app,
-    exporter=AzureExporter(connection_string="InstrumentationKey=a6cfdc31-bc29-493e-9b89-7618597842b9"),
+    exporter=AzureExporter(connection_string=f'InstrumentationKey={INSTRUMENTAL_KEY}'),
     sampler=ProbabilitySampler(rate=1.0)
 )
 
@@ -81,18 +82,19 @@ else:
     title = app.config['TITLE']
 
 # Redis Connection
-redis_server = os.environ['REDIS']
-# Redis Connection to another container
-try:
-    if "REDIS_PWD" in os.environ:
-        r = redis.StrictRedis(host=redis_server,
-                     port=6379,
-                     password=os.environ['REDIS_PWD'])
-    else:
-        r = redis.Redis(redis_server)
-    r.ping()
-except redis.ConnectionError:
- exit('Failed to connect to Redis, terminating.')
+r = redis.Redis()
+# redis_server = os.environ['REDIS']
+# # Redis Connection to another container
+# try:
+#     if "REDIS_PWD" in os.environ:
+#         r = redis.StrictRedis(host=redis_server,
+#                      port=6379,
+#                      password=os.environ['REDIS_PWD'])
+#     else:
+#         r = redis.Redis(redis_server)
+#     r.ping()
+# except redis.ConnectionError:
+#  exit('Failed to connect to Redis, terminating.')
 
 # Change title to host name to demo NLB
 if app.config['SHOWHOST'] == "true":
